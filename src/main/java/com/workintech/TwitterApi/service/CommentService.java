@@ -15,6 +15,7 @@ public interface CommentService {
     CommentResponse findById(Long id);
     CommentResponse save(Long tweetId,CommentRequest commentRequest);
     CommentResponse update(Long id,CommentRequest commentRequest);
-    void deleteById(Long id);
+    Long deleteByTweet_Id(Long id);
+    Long deleteById(Long id);
 
 }

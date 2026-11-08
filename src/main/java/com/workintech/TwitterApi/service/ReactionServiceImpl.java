@@ -4,8 +4,11 @@ import com.workintech.TwitterApi.dto.ReactionResponse;
 import com.workintech.TwitterApi.dto.TweetReactionCountResponse;
 import com.workintech.TwitterApi.entity.Reaction;
 import com.workintech.TwitterApi.entity.ReactionType;
+import com.workintech.TwitterApi.entity.Tweet;
 import com.workintech.TwitterApi.exception.ApiException;
 import com.workintech.TwitterApi.repository.ReactionRepository;
+import com.workintech.TwitterApi.repository.TweetRepository;
+import com.workintech.TwitterApi.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,7 +27,10 @@ public class ReactionServiceImpl implements ReactionService {
     private ReactionRepository reactionRepository;
 
     @Autowired
+    private TweetRepository tweetRepository;
 
+    @Autowired
+    private UserRepository userRepository;
 
     @Override
     public ReactionResponse findByUserIdAndTweetId(Long userId, Long tweetId) {
@@ -58,8 +64,33 @@ public class ReactionServiceImpl implements ReactionService {
     }
 
 
+
     public ReactionResponse toggleReaction(Long userId, Long tweetId, ReactionType reactionType) {
-        Reaction reaction = new Reaction();
-       return null;
+        Optional<Reaction> optionalReaction = reactionRepository.findByUserIdAndTweetId(userId,tweetId);
+        if(optionalReaction.isPresent()){
+            Reaction reaction = optionalReaction.get();
+            if(reaction.getReactionType().equals(reactionType)){
+                reactionRepository.deleteById(reaction.getId());
+                return null;
+            }else{
+                reaction.setReactionType(reactionType);
+                reactionRepository.save(reaction);
+                return new ReactionResponse(reaction.getTweet().getId(),reaction.getReactionType());
+            }
+
+        }else{
+            Reaction reaction = new Reaction();
+            reaction.setReactionType(reactionType);
+            reaction.setTweet(tweetRepository.findById(tweetId).orElseThrow(()->new ApiException("Tweet bulunamadı",HttpStatus.NOT_FOUND)));
+            reaction.setUser(userRepository.findById(userId).orElseThrow(()->new ApiException("User Bulunamadı",HttpStatus.NOT_FOUND)));
+            reactionRepository.save(reaction);
+            return new ReactionResponse(reaction.getTweet().getId(),reaction.getReactionType());
+        }
+    }
+
+    @Override
+    public Long deleteByTweet_Id(Long tweetId) {
+        return reactionRepository.deleteByTweet_Id(tweetId);
+
     }
 }

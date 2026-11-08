@@ -26,30 +26,18 @@ public class TweetServiceImpl implements TweetService {
     private ReactionService reactionService;
 
     @Autowired
-    private RetweetRepository retweetRepository;
+    private RetweetService retweetService;
 
     @Autowired
     private CommentService commentService;
 
 
-    private Map<Long,Integer> getRetweetCountMap() {
-        List<RetweetCountResponse> retweetCountResponseList = retweetRepository.getRetweetCount();
-        Map<Long,Integer> retweetCountResponseMap = new HashMap<>();
-        for(RetweetCountResponse item : retweetCountResponseList) {
-            retweetCountResponseMap.put(item.getTweetId(),item.getCount());
-        }
-        return retweetCountResponseMap;
-    }
-
-
     //Helper method for Counting (To avoid to repeat)
-
-
 
     private TweetResponse mapToTweetResponse(Tweet tweet) {
         Map<Long,Integer> likeCountMap = reactionService.getTweetLikeCounts();
         Map<Long,Integer> disLikeCountMap = reactionService.getTweetDislikeCounts();
-        Map<Long,Integer> retweetCountMap = getRetweetCountMap();
+        Map<Long,Integer> retweetCountMap = retweetService.getRetweetCount();
         Map<Long,Integer> commentCountMap =  commentService.getCommentCountMap();
 
         return new  TweetResponse(
@@ -123,7 +111,12 @@ public class TweetServiceImpl implements TweetService {
     }
 
     @Override
-    public void deleteById(Long id) {
+    public Long deleteById(Long id) {
+        retweetService.deleteByTweet_Id(id);
+        reactionService.deleteByTweet_Id(id);
+        commentService.deleteByTweet_Id(id);
         tweetRepository.deleteById(id);
+
+        return id;
     }
 }

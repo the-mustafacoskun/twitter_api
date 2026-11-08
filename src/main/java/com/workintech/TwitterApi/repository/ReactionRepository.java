@@ -18,5 +18,5 @@ public interface ReactionRepository extends JpaRepository<Reaction, Long> {
 
     @Query("SELECT new com.workintech.TwitterApi.dto.TweetReactionCountResponse(r.tweet.id,COUNT(r)) FROM Reaction r WHERE r.type='DISLIKE' GROUP BY r.tweet.id ")
     List<TweetReactionCountResponse> getTweetDislikeCounts();
-    void deleteByTweet_Id(Long tweetId);
+    Long deleteByTweet_Id(Long tweetId);
 }

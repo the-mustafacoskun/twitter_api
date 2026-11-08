@@ -13,5 +13,5 @@ public interface ReactionService {
     Map<Long,Integer> getTweetLikeCounts();
     Map<Long,Integer> getTweetDislikeCounts();
     ReactionResponse toggleReaction(Long userId, Long tweetId, ReactionType reactionType);
-
+    Long deleteByTweet_Id(Long tweetId);
 }

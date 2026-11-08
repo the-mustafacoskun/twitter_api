@@ -87,7 +87,15 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public void deleteById(Long id) {
-        commentRepository.deleteById(id);
+    public Long deleteByTweet_Id(Long id) {
+        return commentRepository.deleteByTweet_Id(id);
     }
+
+    @Override
+    public Long deleteById(Long id) {
+        commentRepository.deleteById(id);
+        return id;
+    }
+
+
 }

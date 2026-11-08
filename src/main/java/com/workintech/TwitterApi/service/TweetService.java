@@ -13,6 +13,6 @@ public interface TweetService {
     TweetResponse  findById(Long id);
     TweetResponse save(TweetRequest tweetRequest);
     TweetResponse update(Long Id,TweetRequest tweetRequest);
-    void deleteById(Long id);
+    Long deleteById(Long id);
 
 }
