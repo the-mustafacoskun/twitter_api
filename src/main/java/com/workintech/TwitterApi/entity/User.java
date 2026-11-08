@@ -17,13 +17,14 @@ public class User {
     @Column(name="first_name")
     private String firstName;
 
+    @NotNull
     @Column(name="last_name")
     private String lastName;
 
     @Column(name="user_name")
     @NotNull(message="Username cannot be null")
     @NotBlank(message="Username cannot be blank")
-    private String username;
+    private String userName;
 
     @Email
     @Column(name="email")

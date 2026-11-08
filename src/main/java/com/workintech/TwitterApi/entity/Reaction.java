@@ -11,12 +11,16 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name="likes")
-public class Like {
+@Table(name="reactions")
+public class Reaction {
 
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     private Long id;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name="reaction")
+    private ReactionType reactionType;
 
     @CreationTimestamp
     @Column(name="created_at")

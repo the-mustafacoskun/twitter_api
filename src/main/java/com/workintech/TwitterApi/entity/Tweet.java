@@ -4,14 +4,14 @@ package com.workintech.TwitterApi.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
@@ -21,7 +21,7 @@ public class Tweet {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    private String id;
+    private Long id;
 
     @NotNull
     @NotBlank
@@ -35,4 +35,16 @@ public class Tweet {
     @ManyToOne(fetch=FetchType.LAZY,cascade={CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name="user_id")
     private User user;
+
+
+    @OneToMany(mappedBy="tweet",cascade={CascadeType.ALL},orphanRemoval=true)
+    List<Reaction> reactions;
+
+
+    @OneToMany(mappedBy="tweet",cascade={CascadeType.ALL},orphanRemoval=true)
+    List<Comment> comments;
+
+
+    @OneToMany(mappedBy="tweet",cascade={CascadeType.ALL},orphanRemoval=true)
+    List<Retweet> retweets;
 }
