@@ -4,6 +4,7 @@ import com.workintech.TwitterApi.entity.User;
 
 import com.workintech.TwitterApi.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -13,31 +14,30 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
-@AllArgsConstructor
 @Service
-public class UserServiceImpl implements UserDetailsService,UserService {
+@RequiredArgsConstructor
+public class UserServiceImpl implements UserDetailsService, UserService {
 
-    @Autowired
-    private UserRepository userRepository;
-
+    private final UserRepository userRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return userRepository.findByUserName(username).orElseThrow(() -> new UsernameNotFoundException("Bu kullanıcı bulunamadı"+username));
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Kullanıcı bulunamadı: " + username));
     }
 
     @Override
-    public Optional<User> findByUserName(String username) {
-        return userRepository.findByUserName(username);
+    public Optional<User> findByUsername(String username) {
+        return userRepository.findByUsername(username);
     }
 
     @Override
-    public boolean existsByUserName(String username) {
-        return userRepository.existsByUserName(username);
+    public boolean existsByUsername(String username) {
+        return userRepository.existsByUsername(username);
     }
 
     @Override
     public boolean existsByEmail(String email) {
-        return  userRepository.existsByEmail(email);
+        return userRepository.existsByEmail(email);
     }
 }

@@ -1,37 +1,38 @@
 package com.workintech.TwitterApi.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
-@Data
-@AllArgsConstructor
+
+@Getter
+@Setter
 @NoArgsConstructor
 @Entity
-@Table(name="reactions")
+@Table(name = "reactions",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "tweet_id"}))
 public class Reaction {
 
     @Id
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(name="reaction")
+    @Column(name = "reaction", nullable = false)
     private ReactionType reactionType;
 
     @CreationTimestamp
-    @Column(name="created_at")
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    @ManyToOne(cascade={CascadeType.MERGE,CascadeType.REFRESH, CascadeType.DETACH,CascadeType.PERSIST})
-    @JoinColumn(name="user_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne(cascade={CascadeType.DETACH,CascadeType.REFRESH,CascadeType.MERGE,CascadeType.PERSIST})
-    @JoinColumn(name="tweet_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "tweet_id", nullable = false)
     private Tweet tweet;
-
 }

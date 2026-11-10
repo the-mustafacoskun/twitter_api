@@ -5,92 +5,92 @@ import com.workintech.TwitterApi.dto.TweetReactionCountResponse;
 import com.workintech.TwitterApi.entity.Reaction;
 import com.workintech.TwitterApi.entity.ReactionType;
 import com.workintech.TwitterApi.entity.Tweet;
+import com.workintech.TwitterApi.entity.User;
 import com.workintech.TwitterApi.exception.ApiException;
 import com.workintech.TwitterApi.repository.ReactionRepository;
 import com.workintech.TwitterApi.repository.TweetRepository;
 import com.workintech.TwitterApi.repository.UserRepository;
-import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@AllArgsConstructor
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class ReactionServiceImpl implements ReactionService {
 
-    @Autowired
-    private ReactionRepository reactionRepository;
+    private final ReactionRepository reactionRepository;
+    private final TweetRepository tweetRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private TweetRepository tweetRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
+    // Kullanıcının bu tweet'teki mevcut reaksiyonu. reactionType == null ise reaksiyon yok.
     @Override
-    public ReactionResponse findByUserIdAndTweetId(Long userId, Long tweetId) {
-        Optional<Reaction> optionalReaction =reactionRepository.findByUserIdAndTweetId(userId,tweetId);
-        if(optionalReaction.isPresent()){
-            Reaction reaction = optionalReaction.get();
-            return new ReactionResponse(reaction.getTweet().getId(),reaction.getReactionType());
-        }
-        return null;
-
+    @Transactional(readOnly = true)
+    public ReactionResponse findByUsernameAndTweetId(String username, Long tweetId) {
+        ReactionType type = reactionRepository.findByUser_UsernameAndTweet_Id(username, tweetId)
+                .map(Reaction::getReactionType)
+                .orElse(null);
+        return new ReactionResponse(tweetId, type);
     }
 
     @Override
-    public Map<Long,Integer> getTweetLikeCounts() {
-        List<TweetReactionCountResponse> tweetReactionCountResponseList = reactionRepository.getTweetLikeCounts();
-        Map<Long,Integer> tweetLikesCountResponseMap = new HashMap<>();
-        for(TweetReactionCountResponse item : tweetReactionCountResponseList) {
-            tweetLikesCountResponseMap.put(item.getTweetId(),item.getReactionCount());
-        }
-        return tweetLikesCountResponseMap;
+    @Transactional(readOnly = true)
+    public Map<Long, Integer> getTweetLikeCounts() {
+        return toCountMap(reactionRepository.getReactionCounts(ReactionType.LIKE));
     }
 
     @Override
-    public Map<Long,Integer> getTweetDislikeCounts() {
-        List<TweetReactionCountResponse> tweetReactionCountResponseList = reactionRepository.getTweetDislikeCounts();
-        Map<Long,Integer> tweetDisLikesCountResponseMap = new HashMap<>();
-        for(TweetReactionCountResponse item : tweetReactionCountResponseList) {
-            tweetDisLikesCountResponseMap.put(item.getTweetId(),item.getReactionCount());
-        }
-        return tweetDisLikesCountResponseMap;
+    @Transactional(readOnly = true)
+    public Map<Long, Integer> getTweetDislikeCounts() {
+        return toCountMap(reactionRepository.getReactionCounts(ReactionType.DISLIKE));
     }
 
+    @Override
+    public ReactionResponse toggleReaction(String username, Long tweetId, ReactionType reactionType) {
+        Optional<Reaction> existing = reactionRepository.findByUser_UsernameAndTweet_Id(username, tweetId);
 
-
-    public ReactionResponse toggleReaction(Long userId, Long tweetId, ReactionType reactionType) {
-        Optional<Reaction> optionalReaction = reactionRepository.findByUserIdAndTweetId(userId,tweetId);
-        if(optionalReaction.isPresent()){
-            Reaction reaction = optionalReaction.get();
-            if(reaction.getReactionType().equals(reactionType)){
-                reactionRepository.deleteById(reaction.getId());
-                return null;
-            }else{
-                reaction.setReactionType(reactionType);
-                reactionRepository.save(reaction);
-                return new ReactionResponse(reaction.getTweet().getId(),reaction.getReactionType());
+        if (existing.isPresent()) {
+            Reaction reaction = existing.get();
+            if (reaction.getReactionType() == reactionType) {
+                // Aynı reaksiyon tekrar gönderildi: geri al
+                reactionRepository.delete(reaction);
+                return new ReactionResponse(tweetId, null);
             }
-
-        }else{
-            Reaction reaction = new Reaction();
+            // Farklı reaksiyon: like <-> dislike değişimi
             reaction.setReactionType(reactionType);
-            reaction.setTweet(tweetRepository.findById(tweetId).orElseThrow(()->new ApiException("Tweet bulunamadı",HttpStatus.NOT_FOUND)));
-            reaction.setUser(userRepository.findById(userId).orElseThrow(()->new ApiException("User Bulunamadı",HttpStatus.NOT_FOUND)));
             reactionRepository.save(reaction);
-            return new ReactionResponse(reaction.getTweet().getId(),reaction.getReactionType());
+            return new ReactionResponse(tweetId, reactionType);
         }
+
+        Tweet tweet = tweetRepository.findById(tweetId)
+                .orElseThrow(() -> new ApiException("Tweet bulunamadı", HttpStatus.NOT_FOUND));
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ApiException("Kullanıcı bulunamadı", HttpStatus.NOT_FOUND));
+
+        Reaction reaction = new Reaction();
+        reaction.setUser(user);
+        reaction.setTweet(tweet);
+        reaction.setReactionType(reactionType);
+        reactionRepository.save(reaction);
+        return new ReactionResponse(tweetId, reactionType);
     }
 
     @Override
     public Long deleteByTweet_Id(Long tweetId) {
         return reactionRepository.deleteByTweet_Id(tweetId);
+    }
 
+    private Map<Long, Integer> toCountMap(List<TweetReactionCountResponse> items) {
+        Map<Long, Integer> map = new HashMap<>();
+        for (TweetReactionCountResponse item : items) {
+            map.put(item.getTweetId(), item.getReactionCount().intValue());
+        }
+        return map;
     }
 }

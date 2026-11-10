@@ -15,4 +15,6 @@ public interface RetweetService {
     Optional<Retweet> findByUser_IdAndTweet_Id(Long userId, Long tweetId);
     Long deleteByTweet_Id(Long tweetId);
     List<RetweetResponse> findByUserId(Long userId);
+    RetweetResponse toggleRetweet(Long userId, Long tweetId);
+    RetweetResponse deleteRetweet(Long tweetId,Long userId);
 }

@@ -8,6 +8,7 @@ import com.workintech.TwitterApi.exception.ApiException;
 import com.workintech.TwitterApi.repository.RetweetRepository;
 import com.workintech.TwitterApi.repository.TweetRepository;
 import com.workintech.TwitterApi.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import java.util.*;
 
 @AllArgsConstructor
 @Service
+@Transactional
 public class RetweetServiceImpl implements RetweetService {
     @Autowired
     private RetweetRepository retweetRepository;
@@ -52,7 +54,7 @@ public class RetweetServiceImpl implements RetweetService {
         List<RetweetResponse> retweetResponseList = new ArrayList<>();
         for(Retweet item : retweets) {
 
-            retweetResponseList.add(new RetweetResponse(item.getId(),item.getTweet().getId(),item.getUser().getUserName(),item.getCreatedAt()));
+            retweetResponseList.add(new RetweetResponse(item.getId(),item.getTweet().getId(),item.getUser().getUsername(),item.getCreatedAt()));
         }
         return retweetResponseList;
     }
@@ -62,14 +64,24 @@ public class RetweetServiceImpl implements RetweetService {
         if(optionalRetweet.isPresent()) {
             retweetRepository.deleteByUser_IdAndTweet_Id(userId,tweetId);
             Retweet retweet = optionalRetweet.get();
-            return new RetweetResponse(retweet.getId(),retweet.getTweet().getId(),retweet.getUser().getUserName(),retweet.getCreatedAt());
+            return new RetweetResponse(retweet.getId(),retweet.getTweet().getId(),retweet.getUser().getUsername(),retweet.getCreatedAt());
         }else{
             Retweet retweet = new Retweet();
 
             retweet.setUser(userRepository.findById(userId).orElseThrow(()->new ApiException("KUllanıcı Bulunamadı", HttpStatus.NOT_FOUND)));
             retweet.setTweet(tweetRepository.findById(tweetId).orElseThrow(()->new ApiException("KUllanıcı Bulunamadı", HttpStatus.NOT_FOUND)));
             Retweet savedRetweet = retweetRepository.save(retweet);
-            return new RetweetResponse(savedRetweet.getId(),savedRetweet.getTweet().getId(),savedRetweet.getUser().getUserName(),savedRetweet.getCreatedAt());
+            return new RetweetResponse(savedRetweet.getId(),savedRetweet.getTweet().getId(),savedRetweet.getUser().getUsername(),savedRetweet.getCreatedAt());
         }
+    }
+
+    @Override
+    public RetweetResponse deleteRetweet(Long tweetId, Long userId) {
+        Retweet retweet = retweetRepository.findById(tweetId).orElseThrow(()->new ApiException("Tweet bulunamadı", HttpStatus.NOT_FOUND));
+        if(!retweet.getUser().getId().equals(userId)) {
+           throw new ApiException("Sadece kendi retweetini silebilirsin", HttpStatus.UNAUTHORIZED);
+        }
+        retweetRepository.deleteByUser_IdAndTweet_Id(userId,tweetId);
+        return new RetweetResponse(retweet.getId(),retweet.getTweet().getId(),retweet.getUser().getUsername(),retweet.getCreatedAt());
     }
 }
