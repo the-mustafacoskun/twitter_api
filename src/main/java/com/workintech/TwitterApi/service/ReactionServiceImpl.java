@@ -29,7 +29,6 @@ public class ReactionServiceImpl implements ReactionService {
     private final TweetRepository tweetRepository;
     private final UserRepository userRepository;
 
-    // Kullanıcının bu tweet'teki mevcut reaksiyonu. reactionType == null ise reaksiyon yok.
     @Override
     @Transactional(readOnly = true)
     public ReactionResponse findByUsernameAndTweetId(String username, Long tweetId) {
